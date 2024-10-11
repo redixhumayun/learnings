@@ -245,6 +245,7 @@ Broadly:
 1. [Tokio Scheduler](https://tokio.rs/blog/2019-10-scheduler)
 2. [How Tokio Schedules Tasks](https://rustmagazine.org/issue-4/how-tokio-schedule-tasks/)
 3. [InfluxDB Using Tokio For CPU Bound Tasks](https://www.influxdata.com/blog/using-rustlangs-async-tokio-runtime-for-cpu-bound-tasks/)
+4. [Scheduling Internals](https://tontinton.com/posts/scheduling-internals/)
 
 #### Reactors / Async IO
 1. [Abstraction Over kqueue & iouring](https://tigerbeetle.com/blog/a-friendly-abstraction-over-iouring-and-kqueue)
