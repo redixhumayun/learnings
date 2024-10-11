@@ -249,12 +249,13 @@ Broadly:
 #### Reactors / Async IO
 1. [Abstraction Over kqueue & iouring](https://tigerbeetle.com/blog/a-friendly-abstraction-over-iouring-and-kqueue)
 2. [io_uring basics](https://notes.eatonphil.com/2023-10-19-write-file-to-disk-with-io_uring.html)
+3. [monoio implementation blog post](https://en.ihcblog.com/rust-runtime-design-1/)
 
 #### Miscellaneous
 1. [Async I/O In Depth Playlist](https://www.youtube.com/watch?v=_3LpJ6I-tzc&list=PLb1VOxJqFzDd05_aDQEm6KVblhee_KStX&index=4)
 2. [GitHub Repo For Above Playlist](https://github.com/nyxtom/async-in-depth-rust-series)
 3. [Withoutboats on thread-per-core](https://without.boats/blog/thread-per-core/) [[paper referenced in post](https://penberg.org/papers/tpc-ancs19.pdf)]
-4. [monoio implementation blog post](https://en.ihcblog.com/rust-runtime-design-1/)
+4. [Thread-Per-Core In Async Rust](https://emschwartz.me/async-rust-can-be-a-pleasure-to-work-with-without-send-sync-static/)
 5. [Phil's tweet comparing runtime approaches](https://x.com/eatonphil/status/1773518000043299309)
 
 ## Personal Blog
