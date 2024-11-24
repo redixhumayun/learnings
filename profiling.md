@@ -13,7 +13,7 @@ Resize Stats:
 [pid  2017] 18:33:20 munmap(0x7bc4c0e00000, 50335744) = 0
 ```
 
-In the above logs, we can see two calls to `mmap` and two calls to `munmap`. It seems to roughly map to this code
+In the above logs, we can see two calls to `mmap` and two calls to `munmap`. It roughly maps to this code
 
 ```rust
 fn resize(&mut self) {
@@ -108,3 +108,65 @@ Done resizing!!
 Unfortunately, it doesn't seem to be possible to emulate this easily on Mac with `strace`.
 
 ## Running With perf
+Recording with perf is as simple as `sudo perf record -g ./target/debug/hashmap`. The `sudo` is required to override some permissions on an AWS Ubuntu VM. The output of `perf` can be controlled with `sudo perf record -g -o perf_output.data ./target/debug/hashmap`.
+
+The above generates a file called `perf.data` which can be explored using `perf report`. The output of `perf report` looks like below
+
+```shell
+Samples: 10K of event 'task-clock:ppp', Event count (approx.): 2676250000
+  Children      Self  Command  Shared Object         Symbol
++   98.71%     0.00%  hashmap  hashmap               [.] _start
++   98.71%     0.00%  hashmap  libc.so.6             [.] __libc_start_main
++   98.70%     0.00%  hashmap  hashmap               [.] std::rt::lang_start
++   19.74%     0.35%  hashmap  libc.so.6             [.] malloc
++   19.16%     0.30%  hashmap  hashmap               [.] alloc::raw_vec::RawVecInner<A>::with_capacity_in
++   18.79%     0.15%  hashmap  hashmap               [.] alloc::raw_vec::RawVecInner<A>::try_allocate_in
++   17.30%     0.00%  hashmap  libc.so.6             [.] 0x00007298416ac50a
++   16.09%     0.00%  hashmap  [kernel.kallsyms]     [k] 0xffffffff9a000bc7
++   16.09%     0.00%  hashmap  [kernel.kallsyms]     [k] 0xffffffff99e096b3
++   10.63%     0.00%  hashmap  [kernel.kallsyms]     [k] 0xffffffff98cd13f7
++   10.30%    10.28%  hashmap  hashmap               [.] <core::hash::sip::Hasher<S> as core::hash::Hasher>::write
++   10.19%     0.00%  hashmap  [kernel.kallsyms]     [k] 0xffffffff9901922c
++    9.76%     0.00%  hashmap  [kernel.kallsyms]     [k] 0xffffffff99018f5e
++    9.59%     0.00%  hashmap  [kernel.kallsyms]     [k] 0xffffffff990188e7
++    9.03%     9.01%  hashmap  hashmap               [.] hashmap::HashMap<K,V>::insert
++    8.88%     8.87%  hashmap  hashmap               [.] core::intrinsics::copy_nonoverlapping::precondition_check
++    8.48%     0.03%  hashmap  hashmap               [.] core::ptr::drop_in_place<alloc::raw_vec::RawVec<u8>>
+```
+
+The first percentage is the amount of time spent in the children of this call and the second percentage is the amount of time spent within this function itself. The `[.]` and the `[k]` represent whether this is a user-level or kernel call.
+
+These two lines have to do with allocating capacity for the vector storing the data.
+
+```shell
++   19.16%     0.30%  hashmap  hashmap               [.] alloc::raw_vec::RawVecInner<A>::with_capacity_in
++   18.79%     0.15%  hashmap  hashmap               [.] alloc::raw_vec::RawVecInner<A>::try_allocate_in
+```
+
+The line below is Rust's safety check
+
+```shell
++    8.88%     8.87%  hashmap  hashmap               [.] core::intrinsics::copy_nonoverlapping::precondition_check
+```
+
+The line below is about dropping (or cleaning up) the memory of the vector
+
+```shell
++    8.48%     0.03%  hashmap  hashmap               [.] core::ptr::drop_in_place<alloc::raw_vec::RawVec<u8>>
+```
+
+### Generating A Flamegraph
+To generate a flamegraph, do the following
+
+1. Clone the relevant repository with `git clone https://github.com/brendangregg/FlameGraph.git`
+2. Add to $PATH  with `export PATH=$PATH:$(pwd)/FlameGraph`
+3. Run `sudo perf script -i <perf_data_file> | stackcollapse-perf.pl | flamegraph.pl > flamegraph.svg`
+4. Copy the file to local machine (if doing this on a remote server) with `scp -i /path/to/your/key.pem ubuntu@your-ec2-ip:~/hashmap-rs/flamegraph.svg ./`
+5. The SVG can be visualised in the browser.
+
+### Running Profiling On A Mac
+
+Use Instruments to generate and visualise data
+
+To instrument for allocations -> `xcrun xctrace record --template "Allocations" --launch ./target/debug/hashmap -o ./profile_data`
+To instrument for time profiling -> `xcrun xctrace record --template "Time Profiler" --launch ./target/debug/hashmap -o ./profile_data`
