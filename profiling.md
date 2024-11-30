@@ -1,5 +1,6 @@
 ## Running With strace
 
+I probably ran with `strace -e trace=mmap,munmap,brk -f ./target/debug/deps/hashmap-[hash] profile_memory_patterns`
 ```shell
 Resize Stats:
   Old capacity: 1048576, New capacity: 2097152
@@ -168,5 +169,101 @@ To generate a flamegraph, do the following
 
 Use Instruments to generate and visualise data
 
+When trying to run `xcrun xctrace`, an issue like this might pop up
+```shell
+xcrun xctrace record --template "Time Profiler" --template "Allocations" --launch ./target/debug/hashmap
+Starting recording with the Allocations template. Launching process: hashmap.
+xctrace: Instruments wants permission to analyze other processes. Please enter an administrator username and password to allow this.
+Username (zaidhumayun):
+Password:
+
+Ctrl-C to stop the recording
+Run issues were detected (trace is still ready to be viewed):
+* [Error] Failed to gain authorization
+
+    * [Error] Recovery Suggestion: Target binary needs to be debuggable and signed with 'get-task-allow
+
+Recording failed with errors. Saving output file...
+Output file saved as: Launch_hashmap_2024-11-24_22.06.11_1519D5E2.trace
+```
+
+To get around this, sign the binary with the following
+
+```shell
+cargo build [--debug] # create the debug build
+
+# Create entitlements file
+echo '<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>com.apple.security.get-task-allow</key>
+    <true/>
+</dict>
+</plist>' > debug.entitlements
+
+# Then sign
+codesign -s - --entitlements debug.entitlements --force ./target/debug/hashmap
+```
+
 To instrument for allocations -> `xcrun xctrace record --template "Allocations" --launch ./target/debug/hashmap -o ./profile_data`
 To instrument for time profiling -> `xcrun xctrace record --template "Time Profiler" --launch ./target/debug/hashmap -o ./profile_data`
+
+## Notes
+### Workflow
+* Write basic code on Mac OS and use for basic performance measurements using tools like `time` etc.
+* Run most profiling on c6i.2xlarge EC2 instance (8vCPU, 16GBRAM) ($0.34/hour)
+* Run full profile on c6i.metal EC2 instance (128vCPU, 256GBRAM) ($5.44/hour)
+
+**Cost**
+c6i.2xlarge (ap-south-1: $0.336/hour):
+
+8 hours/week = $2.69/week
+Monthly = ~$11 (4.1 weeks)
+
+c6i.metal (ap-south-1: $5.376/hour):
+
+2 hours/week = $10.75/week
+Monthly = ~$44 (4.1 weeks)
+
+Total monthly: ~$55
+
+
+### Setting Up Fresh EC2 For Profiling
+
+```shell
+#!/bin/bash
+
+# Exit on any error
+set -e
+
+echo "Starting EC2 setup for performance profiling..."
+
+# Update system
+sudo apt-get update && sudo apt-get upgrade -y
+
+# Install essential build tools and profiling tools
+sudo apt-get install -y \
+    build-essential \
+    curl \
+    wget \
+    git \
+    linux-tools-common \
+    linux-tools-generic \
+    linux-tools-`uname -r` \
+    strace
+
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source $HOME/.cargo/env
+
+# Clone FlameGraph repository
+cd $HOME
+git clone https://github.com/brendangregg/FlameGraph.git
+echo "export PATH=\$PATH:\$HOME/FlameGraph" >> $HOME/.bashrc
+
+# Create projects directory
+mkdir -p $HOME/projects
+
+echo "Setup complete! Remember to 'source ~/.bashrc' to load the new environment variables"
+```
