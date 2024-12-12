@@ -231,6 +231,7 @@ Broadly:
 5. [Memory Barriers From The Linux Kernel Documentation](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/memory-barriers.txt?id=HEAD)
 6. [ArangoDB's blog on memory barriers in C++](https://arangodb.com/2021/02/cpp-memory-model-migrating-from-x86-to-arm/)
 7. [The Danger Of Atomic Operations](https://abseil.io/docs/cpp/atomic_danger)
+8. [What Every Systems Programmer Should Know About Concurrency](https://assets.bitbashing.io/papers/concurrency-primer.pdf)
 
 ### Sync & Async Web Servers
 1. https://tenthousandmeters.com/blog/python-behind-the-scenes-12-how-asyncawait-works-in-python/
