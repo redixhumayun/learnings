@@ -267,3 +267,150 @@ mkdir -p $HOME/projects
 
 echo "Setup complete! Remember to 'source ~/.bashrc' to load the new environment variables"
 ```
+
+## What Am I Looking At In Terms Of Profiling
+1. Comparing the performance of chained hash table vs open addressing hash table under different workloads - look at criterion benchmarks for this
+    * also try changing the hash implementation to see the impact.
+2. Run a profile for both chained hashing vs open addressing using `perf`, `flamegraph` etc. to collect profiling data along with cache statistics.
+3. Comparing the impact of different concurrency patterns on each hash table individually
+    * coarse lock (single lock for the whole table)
+    * granular locks (one lock per index)
+    * striped locks (one lock per x indexes)
+    It doesn't make sense to compare across implementations since I'm not really sure what that tells me.
+
+
+## CPU & Cache Performance With Strings
+
+With Strings, it looks like both implementations have equivalent cache performance 
+
+```shell
+Performance counter stats for './target/release/hashmap -w load_factor -i chaining':
+
+       762,544,185      cache-references                                                        (66.66%)
+       597,421,905      cache-misses                     #   78.35% of all cache refs           (66.66%)
+     8,145,732,959      L1-dcache-loads                                                         (66.67%)
+       279,075,767      L1-dcache-load-misses            #    3.43% of all L1-dcache accesses   (66.68%)
+       144,218,848      LLC-loads                                                               (66.67%)
+       106,241,540      LLC-load-misses                  #   73.67% of all LL-cache accesses    (66.66%)
+
+      14.427876578 seconds time elapsed
+
+      13.234905000 seconds user
+       1.191811000 seconds sys
+
+ Performance counter stats for './target/release/hashmap -w load_factor -i chaining':
+
+                61      context-switches                 #    4.226 /sec
+                 0      cpu-migrations                   #    0.000 /sec
+    33,334,941,421      cycles                           #    2.309 GHz
+    34,737,785,689      instructions                     #    1.04  insn per cycle
+     6,377,780,492      branches                         #  441.853 M/sec
+        37,015,167      branch-misses                    #    0.58% of all branches
+         14,434.16 msec cpu-clock                        #    1.000 CPUs utilized
+         14,434.20 msec task-clock                       #    1.000 CPUs utilized
+
+      14.436026853 seconds time elapsed
+
+      13.282750000 seconds user
+       1.151891000 seconds sys
+```
+
+```shell
+Performance counter stats for './target/release/hashmap -w load_factor -i open_addressing':
+
+       654,770,201      cache-references                                                        (66.67%)
+       509,578,087      cache-misses                     #   77.83% of all cache refs           (66.68%)
+     5,511,667,961      L1-dcache-loads                                                         (66.67%)
+       272,838,534      L1-dcache-load-misses            #    4.95% of all L1-dcache accesses   (66.67%)
+        91,460,491      LLC-loads                                                               (66.66%)
+        59,470,563      LLC-load-misses                  #   65.02% of all LL-cache accesses    (66.65%)
+
+       9.068350211 seconds time elapsed
+
+       7.816879000 seconds user
+       1.250820000 seconds sys
+
+ Performance counter stats for './target/release/hashmap -w load_factor -i open_addressing':
+
+                24      context-switches                 #    2.635 /sec
+                 1      cpu-migrations                   #    0.110 /sec
+    24,113,035,970      cycles                           #    2.647 GHz
+    26,051,667,680      instructions                     #    1.08  insn per cycle
+     4,472,654,897      branches                         #  491.004 M/sec
+        30,880,291      branch-misses                    #    0.69% of all branches
+          9,109.20 msec cpu-clock                        #    1.000 CPUs utilized
+          9,109.21 msec task-clock                       #    1.000 CPUs utilized
+
+       9.110056061 seconds time elapsed
+
+       7.864538000 seconds user
+       1.244926000 seconds sys
+```
+
+With u64, the results are below for cache statistics
+
+```shell
+Performance counter stats for './target/release/hashmap -w load_factor -i chaining':
+
+       371,480,347      cache-references                                                        (66.68%)
+       250,089,732      cache-misses                     #   67.32% of all cache refs           (66.69%)
+     2,379,798,350      L1-dcache-loads                                                         (66.68%)
+       140,250,731      L1-dcache-load-misses            #    5.89% of all L1-dcache accesses   (66.64%)
+        73,119,033      LLC-loads                                                               (66.65%)
+        41,584,363      LLC-load-misses                  #   56.87% of all LL-cache accesses    (66.67%)
+
+       7.227354747 seconds time elapsed
+
+       6.877215000 seconds user
+       0.340961000 seconds sys
+
+ Performance counter stats for './target/release/hashmap -w load_factor -i open_addressing':
+
+       191,923,350      cache-references                                                        (66.62%)
+       147,320,957      cache-misses                     #   76.76% of all cache refs           (66.66%)
+       880,054,044      L1-dcache-loads                                                         (66.70%)
+        73,579,323      L1-dcache-load-misses            #    8.36% of all L1-dcache accesses   (66.69%)
+        23,186,153      LLC-loads                                                               (66.68%)
+        13,502,622      LLC-load-misses                  #   58.24% of all LL-cache accesses    (66.65%)
+
+       2.726719800 seconds time elapsed
+
+       2.400634000 seconds user
+       0.325950000 seconds sys
+```
+
+With u64, the CPU statistics are below
+
+```shell
+ Performance counter stats for './target/release/hashmap -w load_factor -i chaining':
+
+                23      context-switches                 #    3.191 /sec
+                 1      cpu-migrations                   #    0.139 /sec
+    16,119,550,576      cycles                           #    2.236 GHz
+    11,103,118,251      instructions                     #    0.69  insn per cycle
+     1,827,336,280      branches                         #  253.484 M/sec
+        31,698,887      branch-misses                    #    1.73% of all branches
+          7,208.87 msec cpu-clock                        #    1.000 CPUs utilized
+          7,208.89 msec task-clock                       #    1.000 CPUs utilized
+
+       7.209869462 seconds time elapsed
+
+       6.869181000 seconds user
+       0.339959000 seconds sys
+
+ Performance counter stats for './target/release/hashmap -w load_factor -i open_addressing':
+
+                 8      context-switches                 #    2.974 /sec
+                 0      cpu-migrations                   #    0.000 /sec
+     7,368,594,272      cycles                           #    2.739 GHz
+     5,915,887,442      instructions                     #    0.80  insn per cycle
+       706,016,316      branches                         #  262.459 M/sec
+        18,849,621      branch-misses                    #    2.67% of all branches
+          2,690.00 msec cpu-clock                        #    1.000 CPUs utilized
+          2,690.01 msec task-clock                       #    1.000 CPUs utilized
+
+       2.690491600 seconds time elapsed
+
+       2.363413000 seconds user
+       0.326918000 seconds sys
+```
