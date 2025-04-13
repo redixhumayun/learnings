@@ -41,6 +41,33 @@ The push based model seems a more recent one. Here the driving force starts from
 ```
 
 ### Notes From Volcano Paper
+Broadly, two forms of data flow defined in Volcano:
+- Demand driven data flow (lazy, iterator style with lazy evaluation) [also called pull based flow]
+- Data driven data flow (eager with immediate materialization) [also called push based flow]
+[This](https://justinjaffray.com/query-engines-push-vs.-pull/) is a good resource to read more about these two styles.
+
+1. Volcano is an extensible query execution engine. What makes it extensible:
+  a. All operators (and meta-operators) follow this iterator protocol - `open()`, `next()`, `close()`
+  b. Support functions to provide independence from the data model
+  c. Support functions/parameters to provide policy/mechanism separation
+  d. Support functions to allow predicate matching, comparison, hashing etc.
+2. For materializing intermediate results, Volcano uses special devices called virtual devices. Think of these as pages that exist only in the buffer pool, but aren't necessarily written to disk.
+3. An optimization for Join style operators is to pass around RowID pointers instead of duplicating records and materializing the result immediately.
+4. Joins are implemented in `one-to-one` and `one-to-many` operators.
+  a. Uses either hashing or sorting
+  b. Hashing uses [hybrid hash join](https://www.youtube.com/watch?v=GRONctC_Uh0) to handle large inputs
+  c. Sorting uses [external merge sort](https://opendsa-server.cs.vt.edu/ODSA/Books/CS3/html/ExternalSort.html) for large inputs
+5. Volcano supports the following meta operators:
+  - `choose-plan` (Allows Volcano to defer choice of query plan for prepared statements where late binding happens)
+  - `exchange` (Allows Volcano to support intra-operator & inter-operator parallelism)
+6. The `exchange` operator supports both:
+  - Vertical Parallelism
+  - Horizontal Parallelism
+  Vertical parallelism allows running operators at different levels of the query tree within their own thread/process and `exchange` managers coordination between these levels.
+  Horizontal parallelism allows running multiple instances of an operator at the same level within its own thread/process on a partition input
+  It is while enabling these different forms of parallelism that Volcano switches from demand-driven dataflow to data-driven dataflow
+
+
 This image is a great overview of how Volcano works as an execution engine and fits into the pipeline with an optimizer, buffer pool etc.
 
 ![](/assets/img/query_engines.png)
