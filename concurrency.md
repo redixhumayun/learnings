@@ -143,6 +143,7 @@ Any runtime has the following core concepts:
 The scheduler roughly combines:
 * event loops
 * task poller
+
 It is the "hot" loop of the entire async runtime.
 
 ### Tasks & Futures
