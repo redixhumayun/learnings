@@ -195,7 +195,9 @@ Mechanisms typically include `poll` , `epoll` (on Linux) & `kqueue` (on Unix). T
 It's important to discuss here the difference between the different types of async io models - readiness based & completion based.
 
 >epoll and kqueue fall under the readiness based model. These syscalls only indicate when a file descriptor is available to be read from or written to. There's the overhead of an additional syscall to actually do the writing or reading in this case.
+>
 >io_uring on the other hand falls under the completion based model. This model involves providing the file descriptors you're interested in reading from or writing to and getting the actual results back. It avoids the overhead of the additional syscall.
+>
 >One interesting difference is that it makes no sense to use the readiness based model when doing file I/O. It doesn't mean anything to wait for file "readiness" in this case since files are always ready for I/O.
 
 ## Cooperative & Preemptive Schedulers
@@ -208,6 +210,7 @@ Stackful coroutines can be pre-empted by the scheduler. Stackless coroutines can
 ![](/assets/img/async_terms.png)
 
 Mix and match above two combinations.
+
 stackless + cooperative → Rust futures, JS promises
 
 stackful + preemptive → Goroutines
