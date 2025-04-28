@@ -208,8 +208,11 @@ Stackful coroutines can be pre-empted by the scheduler. Stackless coroutines can
 
 Mix and match above two combinations.
 stackless + cooperative → Rust futures, JS promises
+
 stackful + preemptive → Goroutines
+
 stackless + preemptive → isn’t possible
+
 stackful + cooperative → need examples
 
 Stackless coroutines require the rewiring of the language to use “coloured” functions. Stackful coroutines don’t involve this. [Bob Nystrom blog post](https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/)
