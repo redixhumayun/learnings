@@ -195,3 +195,9 @@ sqlite> CREATE TABLE users (
 sqlite>
 sqlite> EXPLAIN DROP TABLE users;
 ```
+
+
+## SimpleDB
+
+1. The current issue I'm facing is that the test `test planner_tests::test_planner_index_updates` fails because of some lock acquisition issue. For some reason more than one test is competing on the same locks
+This was because the same table name and index name was being used across tests. Since the file name ends up being the same and the lock is identified by `BlockId` which consists of file name and block number, there is a significant chance of overlap.
