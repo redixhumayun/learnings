@@ -40,7 +40,7 @@ The push based model seems a more recent one. Here the driving force starts from
       +------------+
 ```
 
-### Notes From Volcano Paper
+### Notes From Volcano Paper (1994 Paper Dealing With Execution)
 Broadly, two forms of data flow defined in Volcano:
 - Demand driven data flow (lazy, iterator style with lazy evaluation) [also called pull based flow]
 - Data driven data flow (eager with immediate materialization) [also called push based flow]
@@ -67,6 +67,34 @@ Broadly, two forms of data flow defined in Volcano:
   Horizontal parallelism allows running multiple instances of an operator at the same level within its own thread/process on a partition input
   It is while enabling these different forms of parallelism that Volcano switches from demand-driven dataflow to data-driven dataflow
 
+### Notes From Cascade
+The key concepts in Cascade - groups, expressions, rules & tasks
+
+#### Groups & Expressions
+Groups are a set of logically equivalent logical and physical expressions which produce the same result. Look at the table below as an example
+
+```text
+GROUP: {AB}
+┌────────────────────────────┬────────────────────────────────┐
+│     Logical Expressions    │      Physical Expressions      │
+├────────────────────────────┼────────────────────────────────┤
+│ Join(A,B)                  │  HashJoin(A,B)                 │
+│ Join(B,A)                  │  HashJoin(B,A)                 │
+│                            │  MergeJoin(A,B)                │
+│                            │  NestedLoopJoin(A,B)           │
+│                            │  Sort(MergeJoin(A,B))          │
+└────────────────────────────┴────────────────────────────────┘
+```
+The big difference from Volcano is that at a specific point in the query tree, not all logically equivalent plans are generated all at once. Instead, in Cascades a logical plan is generated and the query tree is followed further down. Cascades tends towards early cost materialization.
+To put it more concisely, Volcano separates optimization into two phases - logical & physical. Cascade doesn't make this distinction.
+
+#### Rules
+Rules are an abstraction for the kinds of transformations that can be applied to expressions and rewrite them. They can do logical -> logical or logical -> physical mappings
+Rules consist of a pattern (antecedent) that they match, and a substitute expression they produce when applied.. Custom rules can be registered.
+
+#### Tasks
+Tasks are an abstraction for how transformations actually happen to the query plan. Cascade maintains a heap allocated priority queue and dumps tasks into them. The value of the promise associated with a rule is what dictates where the task lands in the priority queue [cost = estimated cost so far + cost for rule].
+This heap allocated task queue is what allows for multi-threaded query plan exploration as long as task queue and memoization hash map are properly synchronized.
 
 This image is a great overview of how Volcano works as an execution engine and fits into the pipeline with an optimizer, buffer pool etc.
 
