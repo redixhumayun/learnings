@@ -56,7 +56,7 @@ do {
 ### Atomics
 Atomics are a complicated low-level topic that form the foundation on top of which mutexes are built. 
 
-An atomic operation is an indivisible operation
+An atomic operation is an indivisible operation.
 
 #### Operations In Atomics
 
@@ -79,6 +79,26 @@ Each atomic operation has a certain subset of memory orderings that can be speci
 Atomic operations combined with memory ordering can create certain relationships.
 
 For a small set of implementations using atomics in Rust, [see here](https://github.com/redixhumayun/rs-examples)
+
+### Lock-Free & Wait-Free Programming
+Lock-free and wait-free are terms used to describe progress guarantees in concurrent algorithms.
+
+**Lock-free** algorithms guarantee that at least one thread makes progress in a finite number of steps. While some threads might experience starvation, the system as a whole always advances.
+
+**Wait-free** algorithms provide stronger guarantees: every thread makes progress in a bounded number of steps, regardless of the actions of other threads. This eliminates starvation entirely.
+
+The key differences:
+- Lock-free: System-wide progress guaranteed, but individual threads may starve
+- Wait-free: Individual thread progress guaranteed in bounded time
+- Blocking: No progress guarantees (e.g., mutex-based code)
+
+This comparison table shows how different synchronization primitives relate to these guarantees:
+
+| Primitive   | Readers                                             | Writers                                         | Whole Algorithm                                                         |
+|-------------|-----------------------------------------------------|-------------------------------------------------|-------------------------------------------------------------------------|
+| **seqlock** | *lock-free* (they just load counter; may retry)     | **NOT** lock-free (grab internal spin-lock)     | at best *lock-free*: somebody makes progress, writers can starve readers |
+| **RCU**     | *wait-free* (bounded operations, no retries)        | *lock-free* (grace period, but no blocking)     | *wait-free* for readers, *lock-free* for writers                        |
+
 
 ## Communicating Memory
 This is the style of concurrent programming popularized by Go. It's safer due to not locking regions of memory, thus avoiding classic problems like deadlocks. This style is also called Communicating Sequential Processes (CSP).
