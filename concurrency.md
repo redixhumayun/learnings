@@ -36,10 +36,27 @@ sem_wait(&sem); // Decrement and wait if zero
 sem_post(&sem); // Increment, potentially unblocking a waiter
 ```
 
+### Seq Locks
+Seq locks are optimistic concurrency control mechanisms that allow readers to operate without blocking while ensuring writers have exclusive access. They're particularly efficient for read-heavy workloads with occasional writes:
+
+```c
+// Writer
+do {
+    seq = read_seqlock_begin(&lock);
+    // Modify shared data
+} while (write_seqlock_retry(&lock, seq));
+
+// Reader
+do {
+    seq = read_seqlock_begin(&lock);
+    // Read shared data
+} while (read_seqlock_retry(&lock, seq));
+```
+
 ### Atomics
 Atomics are a complicated low-level topic that form the foundation on top of which mutexes are built. 
 
-Atomic operation is an indivisible operation. There are different types of atomics in C++ like std::atomic_flag and std::atomic<T> which is a template with different specialisations for each of the standard types. 
+An atomic operation is an indivisible operation
 
 #### Operations In Atomics
 
@@ -232,13 +249,14 @@ Broadly:
 ## External
 ### Atomics & Memory Ordering
 1. [Understanding Atomics And Memory Ordering](https://dev.to/kprotty/understanding-atomics-and-memory-ordering-2mom)
-2. [The memory order reference from cppreference](https://en.cppreference.com/w/cpp/atomic/memory_order)
-3. [Atomics on the GCC Wiki](https://gcc.gnu.org/wiki/Atomic/GCCMM/AtomicSync)
-4. [Memory Ordering At Compile Time](https://preshing.com/20120625/memory-ordering-at-compile-time/)
-5. [Memory Barriers From The Linux Kernel Documentation](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/memory-barriers.txt?id=HEAD)
-6. [ArangoDB's blog on memory barriers in C++](https://arangodb.com/2021/02/cpp-memory-model-migrating-from-x86-to-arm/)
-7. [The Danger Of Atomic Operations](https://abseil.io/docs/cpp/atomic_danger)
-8. [What Every Systems Programmer Should Know About Concurrency](https://assets.bitbashing.io/papers/concurrency-primer.pdf)
+1. [The memory order reference from cppreference](https://en.cppreference.com/w/cpp/atomic/memory_order)
+1. [Atomics on the GCC Wiki](https://gcc.gnu.org/wiki/Atomic/GCCMM/AtomicSync)
+1. [Memory Ordering At Compile Time](https://preshing.com/20120625/memory-ordering-at-compile-time/)
+1. [Memory Barriers From The Linux Kernel Documentation](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/memory-barriers.txt?id=HEAD)
+1. [ArangoDB's blog on memory barriers in C++](https://arangodb.com/2021/02/cpp-memory-model-migrating-from-x86-to-arm/)
+1. [The Danger Of Atomic Operations](https://abseil.io/docs/cpp/atomic_danger)
+1. [What Every Systems Programmer Should Know About Concurrency](https://assets.bitbashing.io/papers/concurrency-primer.pdf)
+1. [Seq Locks](https://docs.kernel.org/locking/seqlock.html)
 
 ### Sync & Async Web Servers
 1. https://tenthousandmeters.com/blog/python-behind-the-scenes-12-how-asyncawait-works-in-python/
