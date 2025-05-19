@@ -53,6 +53,8 @@ do {
 } while (read_seqlock_retry(&lock, seq));
 ```
 
+> **Note:** Seqlocks can only be used with primitive types that do not contain pointers. See [here](https://docs.kernel.org/locking/seqlock.html) for more details
+
 ### Atomics
 Atomics are a complicated low-level topic that form the foundation on top of which mutexes are built. 
 
