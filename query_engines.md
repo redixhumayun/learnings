@@ -48,6 +48,7 @@ Broadly, two forms of data flow defined in Volcano:
 
 1. Volcano is an extensible query execution engine. 
       What makes it extensible:
+      
       a. All operators (and meta-operators) follow this iterator protocol - `open()`, `next()`, `close()`
 
       b. Support functions to provide independence from the data model
@@ -78,7 +79,7 @@ Broadly, two forms of data flow defined in Volcano:
       Vertical parallelism allows running operators at different levels of the query tree within their own thread/process and `exchange` managers coordination between these levels.
 
       Horizontal parallelism allows running multiple instances of an operator at the same level within its own thread/process on a partition input
-      
+
       It is while enabling these different forms of parallelism that Volcano switches from demand-driven dataflow to data-driven dataflow
 
 This image is a great overview of how Volcano works as an execution engine and fits into the pipeline with an optimizer, buffer pool etc.
