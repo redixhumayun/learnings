@@ -1,9 +1,53 @@
 ## Limbo
 
-## Notes For Limbo
+### How The Code Flows In Limbo
 
-Delete functionality doesn't work yet because it isn't implemented.
-Take a look at [this issue](https://github.com/tursodatabase/limbo/issues/859) as a next step. Working on the in-mem version where the entire thing is mmap'ed sounds like a good next step.
+### Query Execution Flow
+`cli/app.rs::run_query()` -> this is responsible for using the connection and constructing `QueryRunner`. It calls an iterator on `query_runner`
+`core/lib.rs::run_cmd()` -> called for each iteration of `QueryRunner`. Will translate the AST into a `vdbe::Program` and wrap that in a `limbo_core::Statement` and returns control to `app.rs`
+`cli/app.rs::run_query()` -> calls `print_query_result()` which calls `Statement::step()` within a loop
+`Statement::step()` -> calls `Program::step()`
+`Program::step()` -> loops over all the instructions stored in the vdbe and executes them (This is a simplification because control seems to shift back and forth between some components. More specifically, `Statement::step()` is called repeatedly but it seems to happen without control flow returning to `cli/app.rs::run_query()`)
+
+When a query is run, control flows roughly as follows:
+
+```
+             +-------------------------------+
+             | cli/app.rs::run_query()       |
+             | (Constructs QueryRunner and    |
+             |  uses connection)              |
+             +--------------+----------------+
+                            │
+                            ▼
+             +-------------------------------+
+             | core/lib.rs::run_cmd()        |
+             | (Translates AST into a         |
+             |  vdbe::Program and wraps it in  |
+             |  a limbo_core::Statement)       |
+             +--------------+----------------+
+                            │
+                            ▼
+             +-------------------------------+
+             | cli/app.rs::run_query()       |
+             | (Calls print_query_result(),   |
+             |  which invokes Statement::step())|
+             +--------------+----------------+
+                            │
+                            ▼
+             +-------------------------------+
+             | Statement::step()             |
+             | (Calls Program::step())       |
+             +--------------+----------------+
+                            │
+                            ▼
+             +-------------------------------+
+             | Program::step()               |
+             | (Loops through and executes   |
+             |  vdbe instructions)           |
+             +-------------------------------+
+```
+
+*Note:* Although the flow is linear here, control sometimes shifts back and forth between components (for example, `Statement::step()` can be called repeatedly without immediate return to `cli/app.rs::run_query()`).
 
 ```
 sqlite> EXPLAIN DROP TABLE users;
@@ -77,7 +121,9 @@ From the SQLite docs
 Delete an entire database table or index whose root page in the database file is given by P1.
 The table being destroyed is in the main database file if P3==0. If P3==1 then the table to be destroyed is in the auxiliary database file that is used to store tables create using CREATE TEMPORARY TABLE.
 
-3. Miscellaneous 
+3. Ephemeral Table As Scratch Table
+In cases where AUTOVACUUM is enabled, removing a root page which is not the largest root page will force SQLite to move the *last* root page into the empty slot created by deleting the root page for this table. That value will be stored in r[2] for Destroy
+At this point, an ephemeral table is opened as a scratch table
 `13    OpenEphemeral  2     0     6                    0   nColumn=0`
 Opens cursor 2(P1) to a table with 0(p2) columns. Points to a Btree table because p4=0
 If P3 is positive, then reg[P3] is modified slightly so that it can be used as zero-length data for Insert. This is an optimization that avoids an extra Blob opcode to initialize that register.
@@ -87,19 +133,20 @@ Jumps to P2 if the value in register P1 is false. The value is considered false 
 Opens a read cursor(cursor 1) to the schema table
 
 4. Read from schema and insert into transient table
-  * Reads column 3(tbl_name) from cursor 1(sqlite_master read cursor) into r[13]
-  * Check if r[13] != r[2]. Here r[2] is probably the value read from column 2 of sqlite_schema in the previous loop
+Read all the row id's from sqlite_schema for rows matching the root page that was just moved and copy them into the ephemeral table. The ephemeral table is a scratch table.
+  * Reads column 3(roopage) from cursor 1(sqlite_master read cursor) into r[13]
+  * Check if r[13] != r[2]. Here r[2] is the value returned from OP_Destroy
   * If the equality check is equal, read the rowid of the current row into r[7]
   * Insert the rowid from the previous step into cursor 2 (for the ephemeral table) with empty data
 
-5. Miscellaneous
+5. Read from ephemeral table back into the sqlite_schema table
 `22    OpenWrite      1     1     0     5              0   root=1 iDb=0; sqlite_master`
 Open a write cursor (cursor 1) to the sqlite_schema table
 
-6. Insert Into Schema Table (but why?)
+6. Loop to insert into the schema table
   * Store the current rowid pointed to by cursor 2(ephemeral table) in r[7] `24      Rowid          2     7     0                    0   r[7]= rowid of 2`
   * If the cursor p1 (sqlite_master) does not contain a record with rowid p3(r[7] which was allocated in the previous step), then jump to p2 `25      NotExists      1     34    7                    0   intkey=r[7]`
-  * Allocate values to 5 columns with registers 8,9,10,11,12 and make a record with it
+  * Allocate values to 5 columns with registers 8,9,10,11,12 and make a record with it. However, for column 4 (rootpage), change it to the page number that was dropped
   * Deletes the entry pointed to by cursor 1 `32      Delete         1     68    7                    0`
   * Inserts the record with a key of `r[7]` and data of `r[15]` into cursor 1 (sqlite_schema write cursor) `33      Insert         1     15    7                    0   intkey=r[7] data=r[15]`
 
@@ -112,7 +159,6 @@ The first loop makes sense. The second loop is a little confusing because of
 18      Ne             2     21    13    BINARY-8       84  if r[13]!=r[2] goto 21
 ```
 reading column 3 gives the root page number for the table but that is being compared to `r[2]` which is storing the table name. How will they ever match?
-
 
 ### Notes on 9th Feb
 
