@@ -44,5 +44,8 @@ For LSM-trees since reads are done randomly on disk to accumulate all the SST fi
 
 # Resources
 
+### LLM Links
+1. [Chat with Gemini about tiered storage with LLM's](https://aistudio.google.com/app/prompts?state=%7B%22ids%22:%5B%221pQKJd-4oLRa5I4M69MHxVfO3BZgDVn92%22%5D,%22action%22:%22open%22,%22userId%22:%22113750420014308108308%22,%22resourceKeys%22:%7B%7D%7D&usp=sharing)
+
 #### B-Trees
 1. [Optimistic B-trees](https://cedardb.com/blog/optimistic_btrees/)
