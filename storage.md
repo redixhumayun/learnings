@@ -3,24 +3,24 @@
 How do LSM trees work?
 Do append only memtables. Memtables are frozen to an SST and then stored on disk. The sorted order of keys is either done at insertion time or(slower writes) or when freezing the memtable to an SST (doesn’t affect writes). At some later point, SST’s are compacted with the compaction strategy being different. 
 
-When doing writes to an LSM engine, data is written to the WAL first and then to the memtable. The WAL could either be flushed on every write (transaction) (fscynced, inefficient but durable) or checkpointed after a certain number of logs (efficient but not durable). The WAL can be flushed and re-created when a single memtable is converted to an SSTable. [Note: This doesn’t have to be default behaviour but it seems like this is how RocksDB does it]
+When doing writes to an LSM engine, data is written to the WAL first and then to the memtable. The WAL could either be flushed on every write (transaction) (fscynced, inefficient but durable) or checkpointed after a certain number of logs (efficient but not durable). The WAL can be flushed and re-created when a single memtable is converted to an SSTable. [Note: This doesn’t have to be default behaviour but it seems like this is [how RocksDB does it](https://github.com/facebook/rocksdb/wiki/RocksDB-Overview#3-high-level-architecture)]
 How does compaction work?
 
-Compaction strategies can differ -> elaborate on compaction strategies
+Compaction strategies can differ -> [elaborate on compaction strategies](https://github.com/facebook/rocksdb/wiki/Compaction)
 
-Levelled compaction seems most popular - see here for more details
+Levelled compaction seems most popular - [see here for more details](https://github.com/facebook/rocksdb/wiki/Leveled-Compaction)
 Essentially, each level has a certain number of SST files. When the number of files grows beyond the number allowed at that level, one file is picked and merged with the overlapping range of files below it. (Question: what happens when there isn’t an overlapping range available? How is the file chosen?)
 
 Amplification (comparison with B-tree)
 
-Based on definitions from here
+Based on definitions from [here](https://tikv.org/deep-dive/key-value-engine/b-tree-vs-lsm/)
 Write amplification = data written to disk / data written to DB (number of times data is written to disk / data written to DB?)
 Read amplification = data read from disk / data returned for query
 Space amplification = data on disk / logical data on DB
 
 
 Write Amplification
-My initial assumption was that LSM trees have more write amplification than B-trees because of append only characteristics as opposed to B-tree update in place. But, this article disagrees. However, when I tweeted that out, I found this tweet which said that it’s slightly tricker to answer.
+My initial assumption was that LSM trees have more write amplification than B-trees because of append only characteristics as opposed to B-tree update in place. But, [this article disagrees](https://tikv.org/deep-dive/key-value-engine/b-tree-vs-lsm/). However, when I tweeted that out, I found [this tweet](https://x.com/sunbains/status/1760730549264732361?s=20) which said that it’s slightly tricker to answer.
 
 Assuming a B-tree that writes to disk on every update (assuming no WAL & no buffer pool) every single write would result in a disk write. For an LSM-tree every write goes to a WAL (no fsync per write) and then memtable and then gets frozen to SST. Background compaction occurs later which leads to greater write amplification.My answer is that it really seems to depend on the workload. For instance, what happens in the case where a workload can fit entirely in the buffer pool and no disk writes are required unless fsync is manually called at some constant interval?
 
