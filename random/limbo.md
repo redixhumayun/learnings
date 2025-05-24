@@ -208,3 +208,6 @@ sqlite> EXPLAIN DROP TABLE users;
 ### Notes Starting May 19th
 Code flow
 `sqlite3DropTable -> sqlite3CodeDropTable`
+
+## Resources
+1. [Gist of SQLite rebuild script](https://gist.github.com/redixhumayun/625ed412f3d36a27bdf6a8196704b5f9)
