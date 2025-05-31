@@ -209,5 +209,16 @@ sqlite> EXPLAIN DROP TABLE users;
 Code flow
 `sqlite3DropTable -> sqlite3CodeDropTable`
 
+### Notes On Porting AUTOVACUUM To Limbo
+1. Define a feature called autovacuum in `cargo.toml` and treat this as the equivalent of `SQLITE_OMIT_AUTOVACUUM`
+1. Add methods on `Pager` and wherever else required to get and set the `vacuum_mode_largest_root_page` variable
+1. Define the pointer map page stuff (still need to figure out what this is and why its used)
+1. Update the create and destroy methods on `BTree` to check if `SQLITE_OMIT_AUTOVACUUM` is defined and perform the necessary page movements in that case
+
+#### Pointer Map Pages
+1. How do I allocate this page?
+1. When does it get allocated?
+1. What is the format of this page?
+
 ## Resources
 1. [Gist of SQLite rebuild script](https://gist.github.com/redixhumayun/625ed412f3d36a27bdf6a8196704b5f9)

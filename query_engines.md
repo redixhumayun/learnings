@@ -192,9 +192,12 @@ The splitting cost is = 2B → read B blocks + write B sorted blocks
 Note: This is different from in-memory merge sort which has a splitting cost $\log_2(n)$
 
 *Merging cost*
+
 ($\log_k(r)$ - 1) since the final merge is done by the scanner.
+
 Each merge iteration reads B blocks (from k input runs) and writes sorted B blocks
 2B * ($\log_k(r)$ - 1)
+
 Finally, add B blocks for the final scan
 
 So, 2B(split) + 2B * ($\log_k(r)$ - 1) + B
