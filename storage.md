@@ -344,9 +344,26 @@ B-Trees rely on in-place updates. S3 objects are immutable. Updating a B-Tree no
 
 LSMs, with their append-only nature and immutable SSTable files, map much more naturally to S3's object storage model.
 
+# Torn Writes
+
+Torn writes are when a page isn't entirely written to disk and only part of it is written. The cause of this is that the page size is greater than the sector size of the disk (which is frequently the case, since sector sizes are typically 512 bytes).
+
+Most of this content is taken from [this great post](https://transactional.blog/blog/2025-torn-writes) from Miller.
+
+## Mitigration Strategies
+1. Detection only - checksum or bits set on page header (cheapest but no prevention, only detection)
+2. Sector-sized pages - ensure page size = sector size (cheap but causes performance issues since this affects branch out factor of page)
+3. Log full page - write full page to WAL as SQLite does (2x write cost)
+4. Log page on first write - write the first copy of the page after checkpoint like PostgreSQL (optimization on logging full page)
+5. Double-Write Buffer - write to a "scratch area" on disk, fsync that and then write actual data pages like MySQL (doesn't incur 2x I/O because of sequential batches)
+6. CoW - each update to a page creates a new page like LMBD (limited concurrency because all updates contend at the root)
+7. Copy on first write - similar to 4 where first write to a page after checkpoint copies it
+8. Atomic block writes - depend on hardware atomic writes spanning multiple blocks
+
 ### Resources
 * [Chat with Gemini about tiered storage with LLM's](https://aistudio.google.com/prompts/1pQKJd-4oLRa5I4M69MHxVfO3BZgDVn92)
 * [Optimistic B-trees](https://cedardb.com/blog/optimistic_btrees/)
 * [RocksDB Wiki: Compaction](https://github.com/facebook/rocksdb/wiki/Compaction)
 * [RocksDB Wiki: Leveled Compaction](https://github.com/facebook/rocksdb/wiki/Leveled-Compaction)
 * [TiKV Deep Dive: B-Tree vs LSM-tree](https://tikv.org/deep-dive/key-value-engine/b-tree-vs-lsm/)
+* [Torn Write Detection And Protection](https://transactional.blog/blog/2025-torn-writes)

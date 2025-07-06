@@ -223,5 +223,52 @@ Code flow
 ### Notes On 3rd June
 Test that is failing repeatedly - TEST Testing: small-insert-integer-vals-100
 
+### Notes On 4th June
+Massive changes made upstream. Rebasing didn't seem to work but merging does so I think rebasing all the way through will work.
+Just rebase all the way through and then tests should pass.
+
+### Notes On 22nd June
+I'm trying to implement the functionality for autovacuum in terms of creating btree root pages
+What I've figured out so far
+
+1. If the page allocated is not equivalent to the page requested when creating a Btree root page, then the pages need to be "swapped"
+1. SQLite does this by modifying the page header on the page that needs to be moved so that the page number changes. To understand this better, look at the following code path
+    `btreeCreateTable` -> `relocatePage` -> `sqlite3PagerMovePage` -> ([`sqlite3PcacheMove` -> `sqlite3GlobalConfig.pcache2.xFetch`] | `sqlite3PcacheDrop`)
+1. There are special considerations inside `sqlite3PagerMovePage`, namely:
+  if the cache already contains the page number being moved to, and the database is open in temporary mode or memory mode:
+    - move the page being moved to beyond the end of the database file temporarily
+    - move the from page into the to location and mark it dirty
+    - later, move the to page from its temporary location into the earlier from page
+  In Limbo, we can do the same thing but the `Pager` first needs to be aware of whether the database is open in in-memory mode, temporary mode or persistent mode.
+1. In `sqlite3PcacheMove`, SQLite handles it by swapping the page numbers instead of moving content around but this isn't possible in Limbo. So, in Limbo, the content will have to be copied over to the new page
+    But, then the question here is how do I ensure that it is safe to swap over the content between the two pages?
+1. Finally, in `relocatePage`, the pointer map pages for both pages need to be fixed so that they point at the correct pages
+
+
+### Notes On 24th June
+1. The regular insert path in SQLite is 
+`btreeCreateTable` -> 
+`allocateBtreePage` -> 
+`btreeGetUnusedPage` -> 
+`btreeGetPage` -> 
+`sqlite3PagerGet` -> 
+`pPager->xGet` (`pager->xGet` is set by `setGetterMethod`) -> 
+`getPageNormal` -> 
+`sqlite3PcacheFetch` -> 
+`pcache.xFetch` -> 
+`pcache1Fetch` (in file pcache1.c) this is where the actual insertion into the cache happens
+So the freshly allocated page is inserted into the page cache when it is allocated. And if the page is allocated from the free list, then it might already exist in the page cache or could be fetched from disk and populated in the page cache.
+
+
+### Notes On 25th June
+It looks like the missing piece is saving cursors on the page that is going to be moved.
+Let's say that we have a table A with a root page of 3 and children pages 4 and 5.
+Now, while allocating table B, we allocate page 6 but we want page 4. So, the first thing to do is to save all cursors on page 4 before relocating content on page 4 to page 6.
+What do I need to do to save cursors? How do I go about doing this? Are the required primitives already present in Limbo?
+
+### Notes On 28th June
+I've figured out how to save the cursor state.
+
+
 ## Resources
 1. [Gist of SQLite rebuild script](https://gist.github.com/redixhumayun/625ed412f3d36a27bdf6a8196704b5f9)
