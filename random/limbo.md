@@ -244,7 +244,6 @@ What I've figured out so far
     But, then the question here is how do I ensure that it is safe to swap over the content between the two pages?
 1. Finally, in `relocatePage`, the pointer map pages for both pages need to be fixed so that they point at the correct pages
 
-
 ### Notes On 24th June
 1. The regular insert path in SQLite is 
 `btreeCreateTable` -> 
@@ -272,3 +271,75 @@ I've figured out how to save the cursor state.
 
 ## Resources
 1. [Gist of SQLite rebuild script](https://gist.github.com/redixhumayun/625ed412f3d36a27bdf6a8196704b5f9)
+
+
+## Exploring The Query Engine In Limbo
+I'm pretty excited to do this. Let's see how it goes.
+
+At a high level, the code seems to flow like this
+`core/lib.rs` -> prepares statements and runs queries to completion. Look at `Connection::query()` which calls `Connection::run_cmd()`
+`core/translate/mod.rs` -> `translate` and `translate_inner` do the actual translation of statements to VDBE programs
+---section specific to translating select statements---
+    `translate_select` is responsible for translating a select query. this prepares the plan, optimizes it and then emits the bytecode for the program of the plan.
+    `prepare_select_plan` checks whether compound select or simple select and prepares plan accordingly
+    `prepare_one_select_plan` actually builds the select plan for each select statement
+---section specific to optimizing plans---
+    `optimize_plan` is called from `translate_select` and is the main entry point to the optimizer
+    `optimize_select_plan` is what optimizes the select plan. I don't understand the code here yet, specifically around rewriting expressions
+
+What `optimize_select_plan` does
+* optimize subqueries - recursively optimize nested subqueries
+
+  Nested subqueries
+    SELECT * FROM (
+        SELECT * FROM users WHERE age > 18
+    ) u WHERE u.name = 'John'
+  
+* expression rewriting - transform expressions into more efficient forms
+
+  Before rewriting:
+  SELECT * FROM users WHERE age BETWEEN 18 AND 65 AND active = true
+
+  After rewriting:
+  SELECT * FROM users WHERE (18 <= age AND age <= 65) AND active = 1
+
+* constant condition elimination
+
+  Example queries:
+  SELECT * FROM users WHERE 1 = 1 AND name = 'John'  -- Always true condition
+  SELECT * FROM users WHERE 1 = 0 AND name = 'John'  -- Always false condition
+
+* table access optimization
+
+  this is the meat. does the following
+    
+    - constraint analysis - analyzes WHERE conditions to find indexable constraints
+    - join order optimization - finds the best join order for tables
+    - index selection - chooses the best index for each table
+    - sort elimination - removes unnecessary sorting if indexes provide needed order
+
+  Example query
+  SELECT * FROM users u 
+  JOIN orders o ON u.id = o.user_id 
+  JOIN products p ON o.product_id = p.id
+  WHERE u.age > 25 AND p.category = 'electronics'
+  ORDER BY u.name
+
+  ## Debugging Perf Issues With Autovacuum
+  When running with autovacuum enabled, I'm seeing a significant performance degradation on TPC-H queries specifically starting with 3. The main bottleneck is page cache thrashing, specifically the methods `make_room_for` and `_detach` in `page_cache.rs`
+
+  I created a new branch and this is the perf output I see, which is relatively small which means it's running quickly
+
+  ```shell
+  zaid-humayun@zaid-humayun-XPS-13-9370:~/Desktop/Development/limbo$ perf record -g --call-graph=dwarf target/release/tursodb perf/tpc-h/TPC-H.db < perf/tpc-h/queries/3.sql
+Turso v0.1.3-pre.3
+Enter ".help" for usage hints.
+This software is ALPHA, only use for development, testing, and experimentation.
+[ perf record: Woken up 1354 times to write data ]
+[ perf record: Captured and wrote 338.732 MB perf.data (42093 samples) ]
+zaid-humayun@zaid-humayun-XPS-13-9370:~/Desktop/Development/limbo$
+```
+
+* Adding back changes to `btree_create` without `relocate_page` is fine
+* Adding back `relocate_page` and children functions without `page_cache` changes and `DatabaseMode` also works fine
+* Adding back `move_page` in `page_cache` was also fine
