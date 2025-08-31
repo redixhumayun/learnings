@@ -1,5 +1,14 @@
 ## Understanding Performance Analysis
 
+### The Iron Law Of Performance
+
+$$\text{Performance} \propto \frac{\text{IPC} \times \text{Frequency}}{\text{Instruction Count}}$$
+
+Or equivalently:
+
+$$\text{Execution Time} \propto \frac{\text{Instruction Count}}{\text{IPC} \times \text{Frequency}}$$
+
+
 ### Wait Time, Service Time & Response Time
 
 **Core Definitions:**
