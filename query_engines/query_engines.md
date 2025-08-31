@@ -202,6 +202,108 @@ Finally, add B blocks for the final scan
 
 So, 2B(split) + 2B * ($\log_k(r)$ - 1) + B
 
+## Query Optimization
+
+### Query Equivalence
+Queries can be mathematically transformed as long as they can be proven to be equivalent. Look at the concept of graph equivalence for this.
+
+Here are some general rules for performing transformations
+
+```text
+Product commutativity: A × B ≡ B × A
+Product associativity: (A × B) × C ≡ A × (B × C)
+Selection splitting: σ(p1 AND p2)(R) ≡ σ(p2)(σ(p1)(R))
+Selection pushdown: σ(p)(A × B) ≡ A × σ(p)(B) [when p only uses B's fields]
+```
+
+### Heuristics Based Optimizer
+Heuristics based optimizers use some simple heuristics to optimize queries instead of using statistics.
+
+1. Selection Pushdown
+
+Push selections down as far as possible. This reduces data volume early in the pipeline
+
+2. Replace Select-Products With Joins
+
+Select-Product combinations are where the output of a product node is fed into a select node with some predicate. This is equivalent to a join node with the same predicate. This also helps reduce data volume early.
+
+3. Consider Only Left Deep Query Trees
+
+It is not entirely clear to my why this helps. Only reason I can think of is that our join algorithms are written in a way that benefits left deep query trees. [This link](https://www.cs.emory.edu/~cheung/Courses/554/Syllabus/5-query-opt/left-deep-trees1.html) suggestst the same.
+
+Another reason is that by considering only left deep query trees, we need to consider only n! plans vs (2n!)/n! plans
+
+4. Each Table In Join Order Should Join Only Previously Chosen Tables, If Possible
+
+That is, ideally, the only product nodes in a query tree should correspond to a join node.
+
+This seems to be a rehash of heuristic 2.
+
+5. Join Order Selection Heuristics
+      a. Choose table producing smallest output
+      b. Choose most restrictive predicate
+
+      5b will reduce the number of intermediate records so a big win
+
+6. Use index select if possible to implement a select node
+
+7. Implement a join node according to following priority
+      - use index join
+      - use hash join if one of the input tables is small
+      - use merge join
+
+8. The planner should add a project node as the child of each materialized node, to remove all fields that are not required
+
+### Choosing Join Order
+A join order can be chosen by heuristics 5a and 5b above. However, it can also be chosen by exhaustive enumeration which will be more accurate.
+
+For a set of tables like `(STUDENT, ENROLL, SECTION, COURSE, DEPT)` use dynamic programming to compute the correct order in which to join them.
+
+### Predicate Pushdown Quick Rules
+
+#### AND (conjunctive): 
+Push down any conjunct that applies to the target schema; keep the rest above.
+
+Safe because (A ∧ X) ⇒ A.
+
+Example: On R(a), from a=1 ∧ b=2 push a=1 to R.
+
+#### OR (disjunctive): 
+Push down only if all disjuncts apply to the same schema; otherwise push none.
+
+Unsafe to partially push because A ∨ X ⇏ A.
+
+Example: On R(a), from a=1 ∨ b=2 push nothing (unless both a and b are in R).
+
+#### NOT
+Push down only if its inner predicate fully applies to the schema.
+
+Optionally normalize with De Morgan’s laws before pushdown.
+
+#### Field = Constant
+Push down if the field belongs to the schema.
+
+Example: R(a) with a=5 → push to R.
+
+#### Field1 = Field2 (join predicate)
+Push down only if both fields are in the same schema; otherwise keep at join.
+
+Example: R(a) ⋈ S(b) with R.a = S.b → keep for join.
+
+#### Mixed forms:
+A ∧ (B ∨ C): You can push A; keep (B ∨ C) above.
+
+A ∨ (B ∧ C): Don’t push anything unless the entire OR applies; consider, but usually avoid, distributive rewrite: (A ∨ B) ∧ (A ∨ C).
+
+Empty-at-this-level operands: Treat as “not applicable here,” not false.
+
+AND: drop inapplicable parts and push the rest.
+
+OR: if any part is inapplicable, don’t push the OR.
+
+
+
+
 ## Links
 1. [Volcano paper](https://paperhub.s3.amazonaws.com/dace52a42c07f7f8348b08dc2b186061.pdf)
 1. [Andy's Lecture On Volcano](https://www.youtube.com/watch?v=kguocoOxXKM)
