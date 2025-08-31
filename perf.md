@@ -84,3 +84,7 @@ Therefore: Average Connections Busy: $L = 100 \times 0.05 = 5$
 ### Queuing Theory
 
 $$\text{Response Time} = \frac{\text{Service Time}}{1 - \text{Utilization}}$$
+
+## Relevant Links
+
+1. [Iron Law Of Performance](https://blog.codingconfessions.com/p/one-law-to-rule-all-code-optimizations)
