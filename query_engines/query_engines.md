@@ -302,8 +302,6 @@ AND: drop inapplicable parts and push the rest.
 OR: if any part is inapplicable, don’t push the OR.
 
 
-
-
 ## Links
 1. [Volcano paper](https://paperhub.s3.amazonaws.com/dace52a42c07f7f8348b08dc2b186061.pdf)
 1. [Andy's Lecture On Volcano](https://www.youtube.com/watch?v=kguocoOxXKM)

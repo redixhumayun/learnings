@@ -89,3 +89,4 @@ $$\text{Response Time} = \frac{\text{Service Time}}{1 - \text{Utilization}}$$
 
 1. [Iron Law Of Performance](https://blog.codingconfessions.com/p/one-law-to-rule-all-code-optimizations)
 2. [Simultaneous Multithreading(SMT)][https://blog.codingconfessions.com/p/simultaneous-multithreading]
+3. [The Every Computer Performance Book](https://archive.org/details/isbn_9781482657753)
