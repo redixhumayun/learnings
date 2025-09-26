@@ -71,16 +71,32 @@ An atomic operation is an indivisible operation.
 #### Memory Order Operations
 
 1. `memory_order_relaxed`
-2. `memory_order_acquire`
-3. `memory_order_consume`
-4. `memory_order_acq_rel`
-5. `memory_order_release`
-6. `memory_order_seq_cst`
+1. `memory_order_release`
+1. `memory_order_acquire`
+1. `memory_order_acq_rel`
+1. `memory_order_seq_cst`
 
-Each atomic operation has a certain subset of memory orderings that can be specified for it. 
-Atomic operations combined with memory ordering can create certain relationships.
+Each atomic operation has a certain subset of memory orderings that can be specified for it. Atomic operations combined with memory ordering can create certain relationships.
 
 For a small set of implementations using atomics in Rust, [see here](https://github.com/redixhumayun/rs-examples)
+
+#### Hardware Concerns
+
+Atomics and the corresponding assembly generated depend a lot on the ISA which in turn depends on the hardware the code will run on.
+
+For example, the x86 ISA enforces something called Total Store Ordering (TSO). The simplest way to think of this is as the SeqCst memory model with Store/Load relaxation across different memory addresses. Or, phrased differently, it provides SeqCst on the **same memory location** but not across memory locations.
+
+What this means is that Stores and Loads across different memory addresses can be re-ordered with respect to each other. This leads to interesting problems like this one with the [Peterson algorithm](https://coffeebeforearch.github.io/2020/11/29/hardware-memory-ordering.html).
+
+#### Hardware Fences
+
+Hardware fences refers to the ISA instructions that are emmitted to ensure that certain memory ordering guarantees are upheld. For instance, on x86 the following fences are defined as part of the ISA:
+
+* _mm_sfence
+* _mm_lfence
+* _mm_mfence
+
+So, when a specific memory ordering is mentioned in the code and the ISA cannot guarantee that by default, one of these hardware fences is emitted into the assembly.
 
 ### Lock-Free & Wait-Free Programming
 Lock-free and wait-free are terms used to describe progress guarantees in concurrent algorithms.
