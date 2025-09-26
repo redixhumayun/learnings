@@ -279,6 +279,7 @@ Broadly:
 1. [The Danger Of Atomic Operations](https://abseil.io/docs/cpp/atomic_danger)
 1. [What Every Systems Programmer Should Know About Concurrency](https://assets.bitbashing.io/papers/concurrency-primer.pdf)
 1. [Seq Locks](https://docs.kernel.org/locking/seqlock.html)
+1. [Hardware Memory Reordering](https://coffeebeforearch.github.io/2020/11/29/hardware-memory-ordering.html)
 
 ### Sync & Async Web Servers
 1. https://tenthousandmeters.com/blog/python-behind-the-scenes-12-how-asyncawait-works-in-python/
