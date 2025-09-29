@@ -84,9 +84,11 @@ For a small set of implementations using atomics in Rust, [see here](https://git
 
 Atomics and the corresponding assembly generated depend a lot on the ISA which in turn depends on the hardware the code will run on.
 
-For example, the x86 ISA enforces something called Total Store Ordering (TSO). The simplest way to think of this is as the SeqCst memory model with Store/Load relaxation across different memory addresses. Or, phrased differently, it provides SeqCst on the **same memory location** but not across memory locations.
+For example, the x86 ISA enforces something called Total Store Ordering (TSO). The simplest way to think of this is as the SeqCst memory model with Store/Load relaxation across different memory addresses. Or, phrased differently, it provides SeqCst across memory regions **except** when doing a Store -> Load across different memory addresses.
 
 What this means is that Stores and Loads across different memory addresses can be re-ordered with respect to each other. This leads to interesting problems like this one with the [Peterson algorithm](https://coffeebeforearch.github.io/2020/11/29/hardware-memory-ordering.html).
+
+Guaranteeting SeqCst on the same memory address is equivalent to coherency which is a requirement for all processors because it would be difficult to write a program without this.
 
 #### Hardware Fences
 
