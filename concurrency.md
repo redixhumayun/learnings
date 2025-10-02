@@ -298,6 +298,7 @@ Broadly:
 1. [What Every Systems Programmer Should Know About Concurrency](https://assets.bitbashing.io/papers/concurrency-primer.pdf)
 1. [Seq Locks](https://docs.kernel.org/locking/seqlock.html)
 1. [Hardware Memory Reordering](https://coffeebeforearch.github.io/2020/11/29/hardware-memory-ordering.html)
+1. [Atomics For Humans](https://gist.github.com/kprotty/bb26b963441baf2ab3486a07fbf4762e)
 
 ### Sync & Async Web Servers
 1. https://tenthousandmeters.com/blog/python-behind-the-scenes-12-how-asyncawait-works-in-python/
