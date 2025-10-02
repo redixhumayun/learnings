@@ -84,11 +84,21 @@ For a small set of implementations using atomics in Rust, [see here](https://git
 
 Atomics and the corresponding assembly generated depend a lot on the ISA which in turn depends on the hardware the code will run on.
 
-For example, the x86 ISA enforces something called Total Store Ordering (TSO). The simplest way to think of this is as the SeqCst memory model with Store/Load relaxation across different memory addresses. Or, phrased differently, it provides SeqCst across memory regions **except** when doing a Store -> Load across different memory addresses.
+##### x86-64
+
+For example, the x86 ISA enforces something called Total Store Ordering (TSO). The simplest way to think about this is of AcqRel semantics on all memory. The Store -> Load re-ordering across different memory addresses is the only thing prevent SeqCst semantics.
 
 What this means is that Stores and Loads across different memory addresses can be re-ordered with respect to each other. This leads to interesting problems like this one with the [Peterson algorithm](https://coffeebeforearch.github.io/2020/11/29/hardware-memory-ordering.html).
 
-Guaranteeting SeqCst on the same memory address is equivalent to coherency which is a requirement for all processors because it would be difficult to write a program without this.
+Guaranteeing SeqCst on the same memory address is equivalent to coherency which is a requirement for all processors because it would be difficult to write a program without this.
+
+This ISA by default provides Acquire/Release semantics in the assembly and with one additional hardware memory fence you get SeqCst semantics.
+
+##### ARM64
+
+The ARM64 ISA by default provides Relaxed ordering semantics, but anything above that emits the same assembly. That is, Acquire, Release and AcqRel all emit the same assembly as SeqCst.
+
+Perhaps a silly way to phrase the above is on x86, use AcqRel everywhere by default unless you need SeqCst. On ARM, use Relaxed everywhere by default and use SeqCst when you need some ordering. The assembly and performance ends up being the same as long as there are no cross-platform requirements.
 
 #### Hardware Fences
 
