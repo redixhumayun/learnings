@@ -310,6 +310,9 @@ Broadly:
 1. [Hardware Memory Reordering](https://coffeebeforearch.github.io/2020/11/29/hardware-memory-ordering.html)
 1. [Atomics For Humans](https://gist.github.com/kprotty/bb26b963441baf2ab3486a07fbf4762e)
 
+### Mutexes
+1. [Lock Convoys](https://davekilian.com/lock-convoys.html) (found this thanks to [a tweet](https://x.com/sunbains/status/1983717865221144669) from Sunny Bains)
+
 ### Sync & Async Web Servers
 1. https://tenthousandmeters.com/blog/python-behind-the-scenes-12-how-asyncawait-works-in-python/
 2. https://eli.thegreenplace.net/2017/concurrent-servers-part-1-introduction/ 
