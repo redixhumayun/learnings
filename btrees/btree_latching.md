@@ -4,15 +4,15 @@ This is a summarization of how the popular database engines do btree latching fo
 
 ### SQLite
 
-In shared-cache mode, acquires latches in descending order from root. Single writer which acquires an X lock on the entire database file.
+There is only a file-level lock. Single writer which acquires an X lock on the entire database file.
 
 ### PostgreSQL
 
-Uses Lehman-Yao btrees. For reads, lock on parent is released before acquiring child lock. For writes, they acquire S latches all the way down and an X latch on the leaf. This is safe because of the high link and right pointers in Lehman-Yao btrees.
+Uses Lehman-Yao btrees. For reads, lock on parent is released before acquiring child lock. This is safe because of the high link and right pointers in Lehman-Yao btrees.
 
 ### InnoDB
 
-Has two separate paths - optimistic and pessimistic. The optimistic path will take S latch on the index tree, traverse downt to the leaf and take an X latch there and attempt to insert. If split, re-descend with an X latch on the index tree, go down to the leaf, perform the insert and the split.
+Has two separate paths - optimistic and pessimistic. The optimistic path will take S latch on the index tree, traverse downt to the leaf and take an X latch there and attempt to insert. If split, re-descend with an SX latch on the index tree, go down to the leaf, perform the insert and the split.
 
 ## BTree Descent
 
