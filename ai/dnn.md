@@ -1,3 +1,15 @@
+## Domain Specific Architectures
+
+1. Use dedicated memories to minimize the distance over which data is moved. Example: Reduce caching layers or levels
+
+2. Move resources from microarchitectural optimizations into more arithmetic units or bigger memories
+
+3. Use easiest form of parallelism for the domain
+
+4. Reduce data size and type to simplest needed - increase memory bandwith this way and pack more arithmetic units in
+
+5. Use DSL's for your DSA like TensorFlow for TPU's
+
 ## Deep Neural Networks
 
 ### Multi-Layer Perceptron (MLP)
