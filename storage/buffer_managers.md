@@ -138,13 +138,16 @@ It becomes less attractive as the out-of-memory factor grows very large or the w
   https://tumuchdata.club/post/modern-buffer-managers-2/
 
 * Stavros Harizopoulos, Daniel J. Abadi, Samuel Madden, Michael Stonebraker, "OLTP Through the Looking Glass, and What We Found There", SIGMOD 2008
+  https://www.cs.cmu.edu/~natassa/courses/15-823/Fall17/papers/harizopoulos-oltp.pdf
 * Goetz Graefe, Harumi A. Kuno, Nicolás Norberto, "In-Memory Performance for Big Data", DaMoN 2014
   https://research.google/pubs/in-memory-performance-for-big-data/
 * Viktor Leis, Florian Haas, Adriana Zuniga, Thomas Ziegler, Carsten Binnig, Hannes Muehleisen, "LeanStore: In-Memory Data Management Beyond Main Memory", ICDE 2018
   https://db.in.tum.de/~leis/papers/leanstore.pdf
 * Thomas Neumann, Tobias Muehlbauer, and Alfons Kemper, "Umbra: A Disk-Based System with In-Memory Performance", CIDR 2020
+  https://www.vldb.org/cidrdb/papers/2020/p29-neumann-cidr20.pdf
 * Ryan Crotty, Alex Galakatos, and Andrew Pavlo, "Are You Sure You Want to Use MMAP in Your Database Management System?", CIDR 2022
   https://www.vldb.org/cidrdb/papers/2022/p13-crotty.pdf
 * Florian Haas, Jan Wenzel, Bastian Schmidt, Thomas Neumann, Viktor Leis, "What Modern NVMe Storage Can Do, And How To Exploit It: High-Performance I/O for High-Performance Storage Engines", VLDB 2023
+  https://www.vldb.org/pvldb/vol16/p2090-haas.pdf
 * Viktor Leis, Florian Haas, Jan Wenzel, Bastian Schmidt, "Virtual-Memory Assisted Buffer Management", SIGMOD 2023
   https://www.ibr.cs.tu-bs.de/vss/Publications/2023/leis_23_sigmod.pdf
