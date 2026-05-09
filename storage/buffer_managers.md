@@ -128,6 +128,20 @@ That means the design is very appealing for workloads where:
 
 It becomes less attractive as the out-of-memory factor grows very large or the workload degenerates into heavy random misses.
 
+## Notes from `In-Memory Performance for Big Data`
+
+* Main question: can a disk-based DBMS keep a real buffer pool but perform close to an in-memory system when the working set fits in RAM?
+* The paper's answer is pointer swizzling for B-tree pages.
+* Instead of always following `page_id -> buffer pool lookup -> frame`, a parent page can store a direct pointer to a resident child page.
+* Swizzling is only for in-memory navigation. The persistent on-disk representation still uses stable `page_id`s.
+* Traditional buffer pools still pay for hash lookup, pin/unpin work, and latch traffic even when every relevant page is already resident.
+* The design is intentionally narrow: swizzling focuses on parent-to-child pointers in B-trees, not arbitrary object graphs.
+* Eviction requires un-swizzling: if a child page is going to leave memory, parent references to it must be rewritten back into `page_id`s.
+* The paper proposes child-to-parent metadata in buffer-frame descriptors to make un-swizzling efficient.
+* Swizzled parent references contribute to the child page's pin count, so pages with live structural references are protected from eviction.
+* The broader takeaway is that a buffer pool is not only about handling misses; its own CPU overhead can become a bottleneck when the working set fits in memory.
+* This paper is an important bridge from traditional buffer pools to later systems like `LeanStore` and `Umbra`.
+
 ## References
 
 * Michael Zinsmeister, "Why databases found their old love of disk again", TUMuchData, February 7, 2024
